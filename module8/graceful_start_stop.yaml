@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: graceful_start_stop
+  name: graceful-start-stop
 spec:
   replicas: 1
   selector:
@@ -12,14 +12,15 @@ spec:
       labels:
         app: graceful_start_stop
     spec:
-      terminationGracePeriodSeconds: 60
+      terminationGracePeriodSeconds: 300
       containers:
         - name: module2
-          image: look4xiaodong/cloudnative-module2:0.1
-          args:
-            - /module2
+          image: look4xiaodong/cloudnative-module2:0.4
           ports:
-            - containerPort: 8080
+            - containerPort: 80
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log
           resources:
             requests:
               memory: 128Mi
@@ -31,42 +32,37 @@ spec:
             exec:
               command:
                 - cat
-                - /tmp/healthy
-            initialDelaySeconds: 5
+                - /module2
+            initialDelaySeconds: 30
             periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
-              initialDelaySeconds: 10
-              periodSeconds: 15
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 15
           lifecycle:
             postStart:
               exec:
-                command: ["/bin/sh", "-c", "echo httpserver started"]
+                command: ["/bin/sh", "-c", "echo httpserver started  > /usr/share/message"]
             preStop:
               exec:
-                command: ["/bin/sh","-c","echo httpserver exited"]
-          volumeMounts:
-            - name: varlog
-              mountPath: /var/log
-          volumes:
-            - name: varlog
-              emptyDir: { }
-    status:
-      qosClass: Guaranteed
+                command: ["/bin/sh","-c","echo httpserver exited  > /usr/share/message"]
+      volumes:
+      - name: varlog
+        emptyDir: { }
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: graceful_start_stop
+  name: graceful-start-stop
 spec:
   ports:
-    - name: "8080"
-      port: 8080
+    - name: "80"
+      port: 80
       protocol: TCP
-      targetPort: 8080
+      targetPort: 80
   selector:
     app: graceful_start_stop
   type: NodePort

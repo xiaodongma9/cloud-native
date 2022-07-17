@@ -1,15 +1,15 @@
+FROM golang:1.17 AS builder
+ENV GO111MODULE=off \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
-FROM golang:1.16-alpine as first
-WORKDIR /app
-
-COPY *.go ./
-RUN go mod init module2
-RUN go build -o /module2
-
-EXPOSE 8080
+WORKDIR /build
+COPY . .
+RUN go build -o module2 .
 
 
-FROM scratch
-COPY --from=first ./module2 /
+FROM alpine:3.11
+COPY --from=builder /build/module2 /
 EXPOSE 8080
 ENTRYPOINT ["/module2"]
