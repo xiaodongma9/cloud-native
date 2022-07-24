@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-server
+  template:
+    metadata:
+      labels:
+        app: http-server
+    spec:
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: module2
+          image: look4xiaodong/cloudnative-module2:0.4
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 500m
+            limits:
+              cpu: 1
+              memory: 1Gi
+          livenessProbe:
+            exec:
+              command:
+                - cat
+                - /module2
+            initialDelaySeconds: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 15
+      volumes:
+        - name: varlog
+          emptyDir: { }
