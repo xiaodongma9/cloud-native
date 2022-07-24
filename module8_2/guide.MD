@@ -16,14 +16,8 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cloudnative.key -out
 kubectl create secret tls cloudnative-tls --cert=./tls.crt --key=./tls.key
 ```
 
-### Create a ingress
+### Create cloudnative ingress
 
 ```sh
 kubectl create -f ingress.yaml
-```
-
-### Test the result
-
-```sh
-curl -H "Host: cloudnative.com" https://10.109.204.181 -v -k
 ```
