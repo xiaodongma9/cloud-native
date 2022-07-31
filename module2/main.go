@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
+	"math/rand"
+	"module2/metrics"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,10 +21,17 @@ func main() {
 	http.HandleFunc("/response-header/sysenv", setResHeaderWithSysVersion)
 	http.HandleFunc("/info-logging", logInfo)
 	http.HandleFunc("/healthz", healthz)
+	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/test-for-metric", testForMetric)
+
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+func randNumber(min int, max int) int {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return min + rand.Intn(max-min)
 }
 
 func trapShutdownSignal() {
@@ -61,4 +71,12 @@ func logInfo(w http.ResponseWriter, r *http.Request) {
 
 func healthz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func testForMetric(w http.ResponseWriter, r *http.Request) {
+	timer := metrics.NewTimer()
+	defer timer.ObserveTotal()
+	delay := randNumber(0, 2000)
+	time.Sleep(time.Millisecond * time.Duration(delay))
+	log.Printf("Respond in %d ms\n", delay)
 }
